@@ -19,7 +19,7 @@ import androidx.appcompat.widget.SearchView
 class MainActivity : AppCompatActivity(), MainView, SearchView.OnQueryTextListener {
 
     private val adapter: MainAdapter by lazy {
-        MainAdapter(::onCardClick)
+        MainAdapter(::onCardClick, ::loadMore)
     }
 
     lateinit var presenter: MainPresenter
@@ -72,9 +72,14 @@ class MainActivity : AppCompatActivity(), MainView, SearchView.OnQueryTextListen
         }
         return true
     }
+
+    private fun loadMore() {
+        presenter.loadNextPage()
+    }
 }
 
-class MainAdapter(private val onClick: (User) -> Unit) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class MainAdapter(private val onClick: (User) -> Unit, private val loadMore: () -> Unit) :
+    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var list: List<User> = emptyList()
 
@@ -84,8 +89,9 @@ class MainAdapter(private val onClick: (User) -> Unit) : RecyclerView.Adapter<Re
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val cell = if (viewType == 1) R.layout.cell_user else R.layout.progress_cell
         val view = LayoutInflater.from(parent.context).inflate(
-            R.layout.cell_user,
+            cell,
             parent,
             false
         )
@@ -94,17 +100,30 @@ class MainAdapter(private val onClick: (User) -> Unit) : RecyclerView.Adapter<Re
         ) {}
     }
 
-    override fun getItemCount() = list.size
+    override fun getItemViewType(position: Int): Int {
+        return if (position == list.size) {
+            0
+        } else {
+            1
+        }
+    }
+
+    override fun getItemCount() = list.size + 1
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val user = list[position]
-        holder.itemView.userContainer.setOnClickListener {
-            onClick(user)
+        if (position == list.size) {
+            loadMore()
+        } else {
+            val user = list[position]
+            holder.itemView.userContainer.setOnClickListener {
+                onClick(user)
+            }
+            Picasso.get()
+                .load(user.avatar)
+                .into(holder.itemView.userImageView)
+            holder.itemView.userTextView.text = listOf(user.first_name, user.last_name).joinToString(" ")
+
         }
-        Picasso.get()
-            .load(user.avatar)
-            .into(holder.itemView.userImageView)
-        holder.itemView.userTextView.text = listOf(user.first_name, user.last_name).joinToString(" ")
     }
 }
 
