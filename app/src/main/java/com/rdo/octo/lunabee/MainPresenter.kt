@@ -26,6 +26,7 @@ class MainPresenter(private val view: MainView, private val service: UserService
     }
 
     fun search(query: String) {
+        view.lockSearchMode(query.isNotBlank())
         view.displayUsers(list.filter {
             it.first_name.toLowerCase().contains(query.toLowerCase())
         })

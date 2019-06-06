@@ -13,6 +13,8 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.cell_user.view.*
 import android.app.SearchManager
 import android.content.Context
+import android.view.View.GONE
+import android.view.View.VISIBLE
 import androidx.appcompat.widget.SearchView
 
 
@@ -45,6 +47,10 @@ class MainActivity : AppCompatActivity(), MainView, SearchView.OnQueryTextListen
         searchView.setSearchableInfo(searchManager.getSearchableInfo(this@MainActivity.componentName))
         searchView.setOnQueryTextListener(this)
         return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun lockSearchMode(locked: Boolean) {
+        adapter.lock(locked)
     }
 
     override fun displayError() {
@@ -82,6 +88,7 @@ class MainAdapter(private val onClick: (User) -> Unit, private val loadMore: () 
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var list: List<User> = emptyList()
+    private var locked = false
 
     fun setList(users: List<User>) {
         list = users
@@ -112,7 +119,12 @@ class MainAdapter(private val onClick: (User) -> Unit, private val loadMore: () 
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (position == list.size) {
-            loadMore()
+            if (locked.not()) {
+                holder.itemView.visibility = VISIBLE
+                loadMore()
+            } else {
+                holder.itemView.visibility = GONE
+            }
         } else {
             val user = list[position]
             holder.itemView.userContainer.setOnClickListener {
@@ -124,6 +136,10 @@ class MainAdapter(private val onClick: (User) -> Unit, private val loadMore: () 
             holder.itemView.userTextView.text = listOf(user.first_name, user.last_name).joinToString(" ")
 
         }
+    }
+
+    fun lock(locked: Boolean) {
+        this.locked = locked
     }
 }
 
